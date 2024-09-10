@@ -1,0 +1,5 @@
+#!/bin/bash
+rm -rf .venv &&
+rm -rf __pycache__ &&
+python3 -m venv .venv &&
+source activate && pip3 install -r requirements.txt
