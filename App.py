@@ -157,7 +157,7 @@ class VideoEditor:
         if self.output_dir is None:
             messagebox.showerror("Error", "Output directory not set.")
             return
-        file_path = os.path.join(self.output_dir, f"{self.current_video.split("/")[-1].split(".")[0]}_{self.current_frame}.jpg")
+        file_path = os.path.join(self.output_dir, f"{self.current_video.split('/')[-1].split('.')[0]}_{self.current_frame}.jpg")
         if file_path:
             ret, frame = self.cap.read()
             if ret:
