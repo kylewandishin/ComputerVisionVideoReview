@@ -10,8 +10,8 @@ class VideoEditor:
         self.window.title("Video Editor")
         self.window.attributes('-fullscreen', True)
 
-        self.width = self.window.winfo_screenwidth()
-        self.height = self.window.winfo_screenheight()
+        self.width = int(self.window.winfo_screenwidth())
+        self.height = self.window.winfo_screenheight()-200
         self.window.geometry("{0}x{1}+0+0".format(self.width,self.height))
 
         self.cap = None
@@ -21,13 +21,15 @@ class VideoEditor:
         self.video_files = []
         self.output_dir = None
 
+        self.resized=False
+
         self.create_widgets()
         self.bind_events()
 
     def create_widgets(self):
         # Image display
-        self.canvas_width = int(self.width * 7/8)
-        self.canvas_height = int(self.height * 6/7)
+        self.canvas_width = int(self.width)
+        self.canvas_height = int(self.height)
         self.canvas = tk.Canvas(self.window, width= self.canvas_width , height= self.canvas_height)
         self.canvas.pack(pady=10)
 
@@ -52,16 +54,23 @@ class VideoEditor:
         self.save_frame_btn = ttk.Button(button_frame, text="Save Frame", command=self.save_frame)
         self.save_frame_btn.grid(row=0, column=3, padx=5)
 
+        self.save_frame_2_btn = ttk.Button(button_frame, text="Save Frame", command=self.save_frame_2)
+        self.save_frame_2_btn.grid(row=0, column=4, padx=5)
+
         self.open_dir_btn = ttk.Button(button_frame, text="Open Directory", command=self.open_directory)
-        self.open_dir_btn.grid(row=0, column=4, padx=5)
+        self.open_dir_btn.grid(row=0, column=5, padx=5)
 
         self.output_dir_btn = ttk.Button(button_frame, text="Output Directory", command=self.output_directory)
-        self.output_dir_btn.grid(row=0, column=5, padx=5)
+        self.output_dir_btn.grid(row=0, column=6, padx=5)
+
+        self.output_dir_2_btn = ttk.Button(button_frame, text="Bad Data Directory", command=self.output_directory_2)
+        self.output_dir_2_btn.grid(row=0, column=7, padx=5)
 
     def bind_events(self):
         self.window.bind('<Left>', lambda e: self.prev_frame())
         self.window.bind('<Right>', lambda e: self.next_frame())
         self.window.bind('s', lambda e: self.save_frame())
+        self.window.bind('b', lambda e: self.save_frame_2())
 
     def open_directory(self):
         dir_path = filedialog.askdirectory()
@@ -81,6 +90,12 @@ class VideoEditor:
             self.output_dir = dir_path
             print(f"Output directory set to: {self.output_dir}")
 
+    def output_directory_2(self):
+        dir_path = filedialog.askdirectory()
+        if dir_path:
+            self.output_dir_2 = dir_path
+            print(f"Bad Data Output directory set to: {self.output_dir_2}")
+
     def load_video(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
         self.current_frame = 0
@@ -93,6 +108,12 @@ class VideoEditor:
             return
 
         ret, frame = self.cap.read()
+        if (not self.resized):
+            img_height, img_width, _ = frame.shape
+            ratio = img_width/(self.width-100)
+            self.canvas_height = int(img_height/ratio)
+            self.canvas_width = int(img_width/ratio)
+
         if ret:
             self.current_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) - 1
             self.slider.set(self.current_frame)
@@ -163,6 +184,23 @@ class VideoEditor:
             if ret:
                 cv2.imwrite(file_path, frame)
                 print(f"Frame saved to {file_path}")
+            self.current_frame-=20
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
+
+    def save_frame_2(self):
+        if self.cap is None:
+            return
+        
+        if self.output_dir_2 is None:
+            messagebox.showerror("Error", "Output directory not set.")
+            return
+        file_path = os.path.join(self.output_dir_2, f"{self.current_video.split('/')[-1].split('.')[0]}_{self.current_frame}.jpg")
+        if file_path:
+            ret, frame = self.cap.read()
+            if ret:
+                cv2.imwrite(file_path, frame)
+                print(f"Frame saved to {file_path}")
+            self.current_frame-=20
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
 
     def slider_moved(self, event):
